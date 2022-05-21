@@ -58,7 +58,6 @@ function conditionalRender(startNum, endNum) {
                 camerasInOulu_noOld.push(element)
             }
         });
-        console.log(camerasInOulu_noOld)
         sessionStorage.setItem("camerasInOulu", camerasInOulu_noOld.length)
         camerasInOulu_noOld.forEach(element => {
             let date = new Date(element.measuredTime)
