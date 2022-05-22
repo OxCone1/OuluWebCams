@@ -61,7 +61,7 @@ function conditionalRender(startNum, endNum) {
         sessionStorage.setItem("camerasInOulu", camerasInOulu_noOld.length)
         camerasInOulu_noOld.forEach(element => {
             let date = new Date(element.measuredTime)
-            let time = date.getDate() + "-" + date.getMonth() + "-" + date.getFullYear() + "  " + date.getHours() + ":" + date.getMinutes()
+            let time = date.getDate() + "-" + (date.getMonth()+1) + "-" + date.getFullYear() + "  " + date.getHours() + ":" + date.getMinutes()
             element.measuredTime = time
         });
         //if camera time is more than 4 hours ago, delete camera
