@@ -49,16 +49,14 @@ function conditionalRender(startNum, endNum) {
         });
         let now = new Date()
         camerasInOulu_noOld = []
-        camerasInOulu_noOld.forEach(element => {
-            let date = new Date(element.measuredTime)
-            if ((date.getMinutes()) < 10) {
-                var minutes = "0"+date.getMinutes()
+        camerasInOulu_Clean.forEach((element, index) => {
+            let tempValue = element.measuredTime
+            let date = new Date(tempValue)
+            let timeDiff = now.getTime() - date.getTime()
+            let diffHours = timeDiff / 3600000
+            if (diffHours < 4) {
+                camerasInOulu_noOld.push(element)
             }
-            else{
-                var minutes = date.getMinutes()
-            }
-            let time = date.getDate() + "-" + (date.getMonth()+1) + "-" + date.getFullYear() + "  " + date.getHours() + ":" + minutes
-            element.measuredTime = time
         });
         sessionStorage.setItem("camerasInOulu", camerasInOulu_noOld.length)
         camerasInOulu_noOld.forEach(element => {
