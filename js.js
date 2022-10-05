@@ -10,7 +10,7 @@ async function onpageload() {
         conditionalRender(start, end)
         start = end
         end = end + 4
-        await delay(4500)
+        await delay(3000)
     }
 }
 
