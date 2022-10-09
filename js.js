@@ -48,7 +48,7 @@ function conditionalRender(startNum, endNum) {
             });
         });
         let now = new Date()
-        camerasInOulu_noOld = []
+        let camerasInOulu_noOld = []
         camerasInOulu_Clean.forEach((element, index) => {
             let tempValue = element.measuredTime
             let date = new Date(tempValue)
