@@ -1,31 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Bruh</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<title>Oulu WebCams - Enhanced Traffic Camera Monitor</title>
+
+	<!-- BasecoatUI CSS & JavaScript -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/basecoat.cdn.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/basecoat.min.js" defer></script>
+	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/popover.min.js" defer></script>
+
+	<!-- Turf.js for geospatial calculations -->
+	<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+	<!-- Custom CSS -->
 	<link rel="stylesheet" href="css.css">
-	<script src="js.js"></script>
 </head>
+
 <body>
-	<div class="target">
-		<div id="1">
-			<h1 class="time"></h1>
-		</div>
-		<div id="2">
-			<h1 class="time"></h1>
-		</div>
-		<div id="3">
-			<h1 class="time"></h1>
-		</div>
-		<div id="4">
-			<h1 class="time"></h1>
+	<!-- Main Container (100vh) -->
+	<div class="main-container">
+		<!-- Camera Grid (takes all remaining space) -->
+		<main class="camera-main">
+			<div id="cameraGrid">
+				<!-- Camera containers will be generated here -->
+			</div>
+		</main>
+	</div>
+
+	<!-- Settings Overlay with BasecoatUI Popover -->
+	<div class="settings-overlay" id="settingsOverlay">
+		<div class="popover">
+			<button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings-popover-content"
+				class="settings-btn">
+				⚙️
+			</button>
+
+			<div id="settings-popover-content" data-popover aria-hidden="true" class="settings-popover"
+				data-side="bottom" data-align="end">
+				<form class="form grid gap-4">
+					<header>
+						<h4 class="settings-header">Camera Settings</h4>
+					</header>
+
+					<!-- Camera Count -->
+					<div class="grid gap-2">
+						<label for="cameraCount">Cameras to Show</label>
+						<div class="custom-select">
+							<select id="cameraCount">
+								<option value="1">1 Camera</option>
+								<option value="2">2 Cameras</option>
+								<option value="4" selected>4 Cameras</option>
+								<option value="6">6 Cameras</option>
+								<option value="8">8 Cameras</option>
+								<option value="12">12 Cameras</option>
+								<option value="16">16 Cameras</option>
+							</select>
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+								stroke-linejoin="round" class="lucide lucide-chevrons-up-down">
+								<path d="m7 15 5 5 5-5" />
+								<path d="m7 9 5-5 5 5" />
+							</svg>
+						</div>
+					</div>
+
+					<!-- Auto Cycling -->
+					<div class="grid gap-2">
+						<label>Auto Cycling</label>
+						<div class="flex gap-2">
+							<button id="cyclingToggle" type="button" class="btn btn-success btn-sm">
+								<span id="cyclingStatus">Start</span>
+							</button>
+							<div class="custom-select flex-1">
+								<select id="cyclingInterval">
+									<option value="2000">2s</option>
+									<option value="5000" selected>5s</option>
+									<option value="10000">10s</option>
+									<option value="15000">15s</option>
+									<option value="20000">20s</option>
+									<option value="30000">30s</option>
+									<option value="60000">1m</option>
+									<option value="120000">2m</option>
+								</select>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+									fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+									stroke-linejoin="round" class="lucide lucide-chevrons-up-down">
+									<path d="m7 15 5 5 5-5" />
+									<path d="m7 9 5-5 5 5" />
+								</svg>
+							</div>
+						</div>
+						<div id="rateLimitWarning" class="rate-limit-warning hidden">
+							⚠️ Fast cycling with many cameras may hit API limits. Consider longer intervals.
+						</div>
+					</div>
+
+					<!-- Cycling Mode -->
+					<div class="grid gap-2">
+						<label for="cyclingMode">Cycling Mode</label>
+						<div class="custom-select">
+							<select id="cyclingMode">
+								<option value="all" selected>All Cameras</option>
+								<option value="municipality">By Municipality</option>
+								<option value="station">Single Station</option>
+							</select>
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+								stroke-linejoin="round" class="lucide lucide-chevrons-up-down">
+								<path d="m7 15 5 5 5-5" />
+								<path d="m7 9 5-5 5 5" />
+							</svg>
+						</div>
+					</div>
+
+					<!-- Municipality Selector -->
+					<div id="municipalitySelector" class="grid gap-2 hidden">
+						<label for="selectedMunicipality">Select Municipality</label>
+						<div class="custom-select">
+							<select id="selectedMunicipality">
+								<!-- Will be populated dynamically -->
+							</select>
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+								stroke-linejoin="round" class="lucide lucide-chevrons-up-down">
+								<path d="m7 15 5 5 5-5" />
+								<path d="m7 9 5-5 5 5" />
+							</svg>
+						</div>
+					</div>
+
+					<!-- Station Selector -->
+					<div id="stationSelector" class="grid gap-2 hidden">
+						<label for="selectedStation">Select Station</label>
+						<div class="custom-select">
+							<select id="selectedStation">
+								<!-- Will be populated dynamically -->
+							</select>
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+								stroke-linejoin="round" class="lucide lucide-chevrons-up-down">
+								<path d="m7 15 5 5 5-5" />
+								<path d="m7 9 5-5 5 5" />
+							</svg>
+						</div>
+					</div>
+
+					<!-- Filters with BasecoatUI Switches -->
+					<div class="flex flex-row items-start justify-between rounded-lg border p-4 shadow-xs">
+						<div class="flex flex-col gap-0.5">
+							<label for="dropOldCameras" class="leading-normal">Drop Old Images</label>
+							<p class="text-muted-foreground text-sm">Remove images older than 4 hours</p>
+						</div>
+						<input type="checkbox" id="dropOldCameras" role="switch" checked>
+					</div>
+
+					<div class="flex flex-row items-start justify-between rounded-lg border p-4 shadow-xs">
+						<div class="flex flex-col gap-0.5">
+							<label for="autoHideControls" class="leading-normal">Auto Hide Controls</label>
+							<p class="text-muted-foreground text-sm">Automatically hide controls after 2 seconds</p>
+						</div>
+						<input type="checkbox" id="autoHideControls" role="switch" checked>
+					</div>
+				</form>
+			</div>
 		</div>
 	</div>
+
+	<!-- Status Overlay -->
+	<div class="status-overlay" id="statusOverlay">
+		<div class="status-footer">
+			<span id="statusText">Loading cameras...</span>
+			<span id="lastUpdate" class="status-last-update"></span>
+		</div>
+	</div>
+
+	<!-- Loading Indicator -->
+	<div id="loadingIndicator" class="loading-indicator">
+		<div class="loading-spinner"></div>
+		<span>Updating...</span>
+	</div>
+
+	<!-- Camera Detail Modal -->
+	<div id="cameraModal" class="modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2 id="modalTitle" class="modal-title">Camera Details</h2>
+				<button id="closeModal" class="modal-close">&times;</button>
+			</div>
+			<div class="modal-body">
+				<img id="modalImage" class="modal-image" alt="Camera view">
+				<div id="modalInfo" class="modal-info"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Custom JavaScript -->
+	<script src="js.js"></script>
 </body>
+
 </html>
